@@ -65,7 +65,7 @@ async function indexPDF(jobId, filePath, collectionName) {
 
     // Create embeddings
     const embeddings = new GoogleGenerativeAIEmbeddings({
-      model: "text-embedding-004"
+      model: "gemini-embedding-001"
     });
 
     jobs.set(jobId, { status: 'processing', progress: 60 });
@@ -148,7 +148,7 @@ app.post('/api/chat', async (req, res) => {
     // Create embeddings
     console.log('🔧 Creating embeddings...');
     const embeddings = new GoogleGenerativeAIEmbeddings({
-      model: "text-embedding-004"
+      model: "gemini-embedding-001"
     });
 
     // Connect to existing collection
@@ -198,7 +198,7 @@ ${doc.pageContent}
       error: 'Failed to process chat request',
       details: error.message 
     });
-  }
+  }   
 });
 
 // Start server
