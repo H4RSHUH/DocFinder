@@ -76,6 +76,11 @@ async function indexPDF(jobId, filePath, collectionName) {
       collectionName: collectionName,
     });
 
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log("🗑 PDF deleted after indexing");
+    }
+
     jobs.set(jobId, { status: 'completed', progress: 100, collectionName });
 
     console.log(`✅ Indexing completed for job: ${jobId}`);

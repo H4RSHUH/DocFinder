@@ -3,6 +3,8 @@ import { Upload, MessageCircle, Loader2, File, Send, CheckCircle, XCircle } from
 import ReactMarkdown from "react-markdown";
 
 const App = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
   const [file, setFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('idle'); // idle, uploading, processing, ready, error
   const [collectionName, setCollectionName] = useState('');
@@ -33,7 +35,7 @@ const App = () => {
     
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('http://localhost:3001/api/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -59,7 +61,7 @@ const App = () => {
     const interval = setInterval(async () => {
       try {
         // Replace with your actual API endpoint
-        const response = await fetch(`http://localhost:3001/api/status/${jobId}`);
+        const response = await fetch(`${API_BASE_URL}/api/status/${jobId}`);
         const data = await response.json();
         
         setProgress(data.progress || 0);
@@ -127,7 +129,7 @@ const App = () => {
 
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('http://localhost:3001/api/chat', {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
