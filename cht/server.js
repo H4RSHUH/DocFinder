@@ -160,6 +160,7 @@ app.post('/api/chat', async (req, res) => {
     console.log('🔗 Connecting to Qdrant collection:', collectionName);
     const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
       url: process.env.QDRANT_URL,
+      apiKey: process.env.QDRANT_API_KEY,
       collectionName: collectionName,
     });
 
