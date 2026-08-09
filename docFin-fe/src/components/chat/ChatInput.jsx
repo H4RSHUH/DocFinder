@@ -41,7 +41,7 @@ export default function ChatInput({
   return (
     <div
       ref={ref}
-      className="fixed bottom-0 left-0 md:left-[280px] right-0 bg-gradient-to-t from-bg-app via-bg-app/90 to-transparent pt-4 px-6 pb-5 z-10 flex-shrink-0"
+      className="fixed bottom-0 left-0 md:left-[280px] right-0 bg-gradient-to-t from-bg-app via-bg-app/90 to-transparent pt-2 px-3 pb-3 md:pt-4 md:px-6 md:pb-5 z-10 flex-shrink-0"
     >
       <div className="max-w-[820px] w-full mx-auto relative flex flex-col">
         <AnimatePresence>
@@ -50,7 +50,7 @@ export default function ChatInput({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3.5 py-2 rounded-md bg-warning/10 border border-warning/20 text-warning text-xs font-semibold flex items-center gap-1.5 shadow-xl backdrop-blur-md whitespace-nowrap"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3.5 py-2 rounded-md bg-warning/10 border border-warning/20 text-warning text-xs font-semibold flex items-center gap-1.5 shadow-xl backdrop-blur-md w-[calc(100vw-32px)] max-w-sm md:w-auto md:whitespace-nowrap"
             >
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>Upload at least one PDF to start asking questions...</span>
@@ -61,7 +61,7 @@ export default function ChatInput({
         {/* Composer Card Input */}
         <div
           className={cn(
-            "relative flex flex-col w-full bg-surface border rounded-[12px] transition-all shadow-lg p-4 min-h-[110px]",
+            "relative flex flex-col w-full bg-surface border rounded-[12px] transition-all shadow-lg p-3 md:p-4 min-h-[90px] md:min-h-[110px]",
             hasIndexedDocs
               ? "border-border-strong focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20"
               : "border-border-subtle opacity-60 cursor-not-allowed"
@@ -80,7 +80,7 @@ export default function ChatInput({
                 : "Upload a PDF first to begin..."
             }
             rows={1}
-            className="w-full bg-transparent border-0 outline-none resize-none text-sm text-white placeholder-zinc-500 pb-12 min-h-[44px] max-h-40 leading-relaxed font-normal"
+            className="w-full bg-transparent border-0 outline-none resize-none text-sm text-white placeholder-zinc-500 pb-2 min-h-[36px] md:min-h-[44px] max-h-40 leading-relaxed font-normal"
             onInput={(e) => {
               e.target.style.height = "auto";
               e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";

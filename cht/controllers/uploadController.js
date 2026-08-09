@@ -10,6 +10,13 @@ import { classifyError } from "../utils/errorClassifier.js";
 export async function uploadPDFs(req, res) {
   try {
     const files = req.files;
+    const sessionId = req.headers["x-session-id"];
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: "Missing session ID" });
+    }
+
+    console.log(`[SESSION] Upload: ${sessionId}`);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ success: false, error: "No PDF files uploaded" });
@@ -21,7 +28,7 @@ export async function uploadPDFs(req, res) {
       const jobId = uuidv4();
       const docId = uuidv4();
 
-      createJob(jobId, file.originalname);
+      createJob(jobId, file.originalname, sessionId);
 
       // Await PDF indexing so res returns actual completion status & chunk count
       try {
@@ -30,7 +37,8 @@ export async function uploadPDFs(req, res) {
           docId,
           file.path,
           file.originalname,
-          file.size
+          file.size,
+          sessionId
         );
         indexedDocs.push(docResult);
       } catch (docErr) {

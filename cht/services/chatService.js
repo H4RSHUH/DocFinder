@@ -27,13 +27,14 @@ function withTimeout(promise, ms, operationName = "Operation") {
  * @param {Array}    history - Conversation history
  * @returns {{ answer: string, sources: Array<{ fileName, pageNumber, chunkIndex, snippet }> }}
  */
-export async function askQuestion(query, docIds = [], history = []) {
+export async function askQuestion(query, docIds = [], history = [], sessionId) {
   const TOP_K = 5;
 
   console.log(`[CHAT] request received`);
   console.log(`[CHAT] query: "${query}"`);
   console.log(`[CHAT] conversation history length: ${history?.length || 0}`);
   console.log(`[CHAT] document IDs:`, docIds);
+  console.log(`[SESSION] Chat request from: ${sessionId}`);
 
   if (history && history.length > 0) {
     console.log(`[CHAT] history contents/roles:`);
@@ -105,18 +106,22 @@ STANDALONE SEARCH QUERY:`;
   const qdrant = getClient();
   const collectionName = getCollectionName();
 
-  // Build optional filter for specific documents
-  const filter =
-    docIds && docIds.length > 0
-      ? {
-          must: [
-            {
-              key: "docId",
-              match: { any: docIds },
-            },
-          ],
-        }
-      : undefined;
+  // Build mandatory filter for sessionId and optional filter for specific documents
+  const filter = {
+    must: [
+      {
+        key: "sessionId",
+        match: { value: sessionId },
+      },
+    ],
+  };
+
+  if (docIds && docIds.length > 0) {
+    filter.must.push({
+      key: "docId",
+      match: { any: docIds },
+    });
+  }
 
   let searchResult;
   try {
@@ -137,6 +142,7 @@ STANDALONE SEARCH QUERY:`;
 
   console.log(`[CHAT] retrieval completed`);
   console.log(`[CHAT] chunks found: ${searchResult?.length || 0}`);
+  console.log(`[SESSION] Qdrant results: ${searchResult?.length || 0}`);
 
   if (!searchResult || searchResult.length === 0) {
     return {

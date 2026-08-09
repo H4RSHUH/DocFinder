@@ -62,7 +62,7 @@ export default function ChatArea({
           className="flex-grow overflow-y-auto w-full pt-6 scroll-smooth flex flex-col"
           style={{ paddingBottom: `${composerHeight + 40}px` }}
         >
-          <div className="max-w-[820px] w-full mx-auto px-6 flex-1 flex flex-col justify-start">
+          <div className="max-w-[820px] w-full mx-auto px-4 md:px-6 flex-1 flex flex-col justify-start">
             {messages.length === 0 ? (
               <EmptyState
                 hasIndexedDocs={indexedCount > 0}

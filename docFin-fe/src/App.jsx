@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "./components/Sidebar";
 import ChatArea from "./components/ChatArea";
+import { getSessionId } from "./lib/utils";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -78,12 +79,15 @@ const App = () => {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/documents`);
+      const sessionId = getSessionId();
+      const res = await fetch(`${API_BASE_URL}/api/documents`, {
+        headers: {
+          "x-session-id": sessionId,
+        },
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data.documents && data.documents.length > 0) {
-          setDocuments(data.documents);
-        }
+        setDocuments(data.documents || []);
       }
     } catch {
       // Backend server may not be reachable initially
@@ -126,8 +130,12 @@ const App = () => {
     });
 
     try {
+      const sessionId = getSessionId();
       const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: "POST",
+        headers: {
+          "x-session-id": sessionId,
+        },
         body: formData,
       });
 
@@ -173,8 +181,12 @@ const App = () => {
   // ── Delete Document ─────────────────────────────────────────────────────
   const deleteDocument = async (docId) => {
     try {
+      const sessionId = getSessionId();
       await fetch(`${API_BASE_URL}/api/documents/${docId}`, {
         method: "DELETE",
+        headers: {
+          "x-session-id": sessionId,
+        },
       });
       setDocuments((prev) => prev.filter((d) => (d.docId || d.id) !== docId));
     } catch {
@@ -250,9 +262,13 @@ const App = () => {
     setIsChatting(true);
 
     try {
+      const sessionId = getSessionId();
       const res = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-session-id": sessionId,
+        },
         body: JSON.stringify({
           query: inputMessage,
           docIds: indexedDocs.map((d) => d.docId || d.id),

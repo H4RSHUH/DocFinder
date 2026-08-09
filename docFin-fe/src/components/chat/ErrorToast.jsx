@@ -10,7 +10,7 @@ export default function ErrorToast({ error, onDismiss }) {
       initial={{ opacity: 0, y: -20, x: 20 }}
       animate={{ opacity: 1, y: 0, x: 0 }}
       exit={{ opacity: 0, y: -20, x: 20 }}
-      className="absolute top-4 right-4 z-[99] max-w-sm w-auto bg-surface border border-danger/20 backdrop-blur-md p-3 rounded-md shadow-lg flex items-start gap-2.5"
+      className="absolute top-4 left-4 right-4 md:left-auto md:right-4 z-[99] max-w-sm w-auto bg-surface border border-danger/20 backdrop-blur-md p-3 rounded-md shadow-lg flex items-start gap-2.5"
     >
       <AlertCircle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">

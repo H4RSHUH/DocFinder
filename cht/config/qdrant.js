@@ -87,5 +87,10 @@ async function createNewCollection(qdrant) {
     field_schema: "keyword",
   });
 
+  await qdrant.createPayloadIndex(COLLECTION_NAME, {
+    field_name: "sessionId",
+    field_schema: "keyword",
+  });
+
   console.log(`✅ Created Qdrant collection '${COLLECTION_NAME}' (${VECTOR_SIZE}-dim)`);
 }

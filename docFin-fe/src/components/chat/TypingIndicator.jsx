@@ -13,8 +13,8 @@ export default function TypingIndicator() {
         <span className="text-sm font-semibold text-zinc-300">DocFinder</span>
       </div>
 
-      {/* Pulsating Dots (pl-10 aligns dots exactly under "DocFinder") */}
-      <div className="pl-10 mt-2 py-1.5 flex items-center gap-1">
+      {/* Pulsating Dots (pl-10 aligns dots exactly under "DocFinder" on desktop) */}
+      <div className="pl-0 md:pl-10 mt-2 py-1.5 flex items-center gap-1">
         {[0, 0.15, 0.3].map((delay) => (
           <motion.div
             key={delay}

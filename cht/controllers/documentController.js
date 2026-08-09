@@ -1,5 +1,5 @@
 import {
-  getAllDocuments,
+  getDocumentsBySession,
   deleteDocument as deleteDoc,
 } from "../services/indexingService.js";
 import { classifyError } from "../utils/errorClassifier.js";
@@ -9,7 +9,13 @@ import { classifyError } from "../utils/errorClassifier.js";
  */
 export function listDocuments(req, res) {
   try {
-    const docs = getAllDocuments();
+    const sessionId = req.headers["x-session-id"];
+    if (!sessionId) {
+      return res.status(400).json({ error: "Missing session ID" });
+    }
+
+    const docs = getDocumentsBySession(sessionId);
+    console.log(`[SESSION] Retrieved documents: ${docs.length}`);
     res.json({ documents: docs });
   } catch (error) {
     console.error("❌ List documents error:", error.message);
@@ -23,12 +29,17 @@ export function listDocuments(req, res) {
 export async function deleteDocument(req, res) {
   try {
     const { docId } = req.params;
+    const sessionId = req.headers["x-session-id"];
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "Missing session ID" });
+    }
 
     if (!docId) {
       return res.status(400).json({ error: "Missing docId" });
     }
 
-    await deleteDoc(docId);
+    await deleteDoc(docId, sessionId);
     res.json({ message: `Document ${docId} deleted successfully` });
   } catch (error) {
     const errorResponse = classifyError(error);

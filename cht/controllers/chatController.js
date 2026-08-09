@@ -8,14 +8,19 @@ import { classifyError } from "../utils/errorClassifier.js";
 export async function chat(req, res) {
   try {
     const { query, docIds, history } = req.body;
+    const sessionId = req.headers["x-session-id"];
 
-    console.log("📨 Chat request:", { query, docIds, historyCount: history?.length || 0 });
+    if (!sessionId) {
+      return res.status(400).json({ error: "Missing session ID" });
+    }
+
+    console.log("📨 Chat request:", { query, docIds, historyCount: history?.length || 0, sessionId });
 
     if (!query) {
       return res.status(400).json({ error: "Missing query" });
     }
 
-    const result = await askQuestion(query, docIds, history);
+    const result = await askQuestion(query, docIds, history, sessionId);
     console.log("✅ Chat response generated");
 
     res.json(result);

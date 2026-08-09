@@ -17,8 +17,12 @@ export function getJob(jobId) {
   return jobs.get(jobId);
 }
 
-export function createJob(jobId, fileName) {
-  jobs.set(jobId, { status: "pending", progress: 0, fileName });
+export function createJob(jobId, fileName, sessionId) {
+  jobs.set(jobId, { status: "pending", progress: 0, fileName, sessionId });
+}
+
+export function getDocumentsBySession(sessionId) {
+  return Array.from(documents.values()).filter((doc) => doc.sessionId === sessionId);
 }
 
 export function getAllDocuments() {
@@ -66,9 +70,9 @@ async function embedBatchWithRetry(embeddings, texts, retries = 3, delayMs = 300
  *   3. Embedding (GoogleGenerativeAIEmbeddings / gemini-embedding-001)
  *   4. Vector Storage (Qdrant upsert with metadata)
  */
-export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
+export async function indexPDF(jobId, docId, filePath, fileName, fileSize, sessionId) {
   try {
-    jobs.set(jobId, { status: "processing", progress: 5, fileName });
+    jobs.set(jobId, { status: "processing", progress: 5, fileName, sessionId });
     documents.set(docId, {
       id: docId,
       docId,
@@ -80,6 +84,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       totalChunks: 0,
       status: "processing",
       uploadedAt: new Date().toISOString(),
+      sessionId,
     });
 
     // ── Step 1: Text Extraction ──────────────────────────────────────────
@@ -125,6 +130,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
         fileName,
         chunkIndex: index,
         pageNumber: chunk.metadata?.loc?.pageNumber ?? null,
+        sessionId,
       },
     }));
 
@@ -237,6 +243,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       totalChunks: enrichedChunks.length,
       status: "indexed",
       uploadedAt: documents.get(docId)?.uploadedAt || new Date().toISOString(),
+      sessionId,
     };
 
     documents.set(docId, docObj);
@@ -271,6 +278,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       fileName,
       status: "error",
       error: safeUserMsg,
+      sessionId,
     };
 
     documents.set(docId, failedDoc);
@@ -280,6 +288,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       progress: 0,
       fileName,
       error: safeUserMsg,
+      sessionId,
     });
 
     throw error;
@@ -293,16 +302,27 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
 /**
  * Deletes all vectors belonging to a specific document from Qdrant.
  */
-export async function deleteDocument(docId) {
+export async function deleteDocument(docId, sessionId) {
+  const doc = documents.get(docId);
+  if (!doc) {
+    throw new Error("Document not found");
+  }
+  if (doc.sessionId !== sessionId) {
+    throw new Error("Unauthorized: Document does not belong to this session");
+  }
+
   const qdrant = getClient();
   const collectionName = getCollectionName();
 
   await qdrant.delete(collectionName, {
     filter: {
-      must: [{ key: "docId", match: { value: docId } }],
+      must: [
+        { key: "docId", match: { value: docId } },
+        { key: "sessionId", match: { value: sessionId } },
+      ],
     },
   });
 
   documents.delete(docId);
-  console.log(`🗑️  Deleted document ${docId} from Qdrant`);
+  console.log(`[SESSION] Deleted document ${docId} for session ${sessionId} from Qdrant & memory`);
 }
