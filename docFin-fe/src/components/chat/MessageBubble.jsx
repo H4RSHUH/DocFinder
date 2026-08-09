@@ -1,7 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Sparkles } from "lucide-react";
-import SourceCitations from "./SourceCitations";
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
@@ -27,13 +26,10 @@ export default function MessageBubble({ message }) {
       </div>
 
       {/* AI Answer Content (pl-10 aligns text exactly under "DocFinder" on desktop) */}
-      <div className="pl-0 md:pl-10 mt-3 md:mt-2 space-y-4 max-w-full md:max-w-[90%]">
+      <div className="pl-0 md:pl-10 mt-3 md:mt-2 max-w-full md:max-w-[90%]">
         <div className={`prose-chat max-w-none ${message.isError ? "text-red-400 font-medium border border-red-950/30 bg-red-950/10 px-3.5 py-2.5 rounded-lg" : "text-zinc-100"}`}>
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
-        {message.sources && message.sources.length > 0 && (
-          <SourceCitations sources={message.sources} />
-        )}
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ export function getCollectionName() {
 /**
  * Ensures the 'docfinder' collection exists in Qdrant with vector size 3072.
  * Recreates it if vector dimensions mismatch.
+ * Always ensures required payload indexes exist (idempotent).
  */
 export async function ensureCollection() {
   const qdrant = getClient();
@@ -53,6 +54,8 @@ export async function ensureCollection() {
           await createNewCollection(qdrant);
         } else {
           console.log(`✅ Qdrant collection '${COLLECTION_NAME}' is ready (${VECTOR_SIZE}-dim)`);
+          // Ensure payload indexes exist on pre-existing collections
+          await ensurePayloadIndexes(qdrant);
         }
       } catch (err) {
         console.warn("⚠️ Could not check collection config, recreating collection...", err.message);
@@ -68,6 +71,31 @@ export async function ensureCollection() {
   }
 }
 
+/**
+ * Creates required payload indexes on the collection.
+ * Safe to call multiple times — Qdrant treats duplicate index creation as a no-op.
+ */
+async function ensurePayloadIndexes(qdrant) {
+  const indexes = [
+    { field_name: "docId", field_schema: "keyword" },
+    { field_name: "fileName", field_schema: "keyword" },
+    { field_name: "sessionId", field_schema: "keyword" },
+  ];
+
+  for (const idx of indexes) {
+    try {
+      await qdrant.createPayloadIndex(COLLECTION_NAME, idx);
+    } catch (err) {
+      // Ignore "already exists" errors; log anything unexpected
+      if (!err.message?.includes("already exists")) {
+        console.warn(`⚠️ Could not ensure index for '${idx.field_name}':`, err.message);
+      }
+    }
+  }
+
+  console.log(`✅ Payload indexes verified (docId, fileName, sessionId)`);
+}
+
 async function createNewCollection(qdrant) {
   await qdrant.createCollection(COLLECTION_NAME, {
     vectors: {
@@ -76,21 +104,7 @@ async function createNewCollection(qdrant) {
     },
   });
 
-  // Create payload indexes for efficient filtering
-  await qdrant.createPayloadIndex(COLLECTION_NAME, {
-    field_name: "docId",
-    field_schema: "keyword",
-  });
-
-  await qdrant.createPayloadIndex(COLLECTION_NAME, {
-    field_name: "fileName",
-    field_schema: "keyword",
-  });
-
-  await qdrant.createPayloadIndex(COLLECTION_NAME, {
-    field_name: "sessionId",
-    field_schema: "keyword",
-  });
+  await ensurePayloadIndexes(qdrant);
 
   console.log(`✅ Created Qdrant collection '${COLLECTION_NAME}' (${VECTOR_SIZE}-dim)`);
 }
