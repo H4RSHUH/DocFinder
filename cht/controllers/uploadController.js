@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { createJob, indexPDF } from "../services/indexingService.js";
+import { classifyError } from "../utils/errorClassifier.js";
 
 /**
  * Handles multi-file PDF upload.
@@ -33,11 +34,8 @@ export async function uploadPDFs(req, res) {
         );
         indexedDocs.push(docResult);
       } catch (docErr) {
-        console.error(`❌ Upload indexing failed for "${file.originalname}":`, docErr.message);
-        return res.status(400).json({
-          success: false,
-          error: `Failed to process "${file.originalname}": ${docErr.message}`,
-        });
+        const errorResponse = classifyError(docErr);
+        return res.status(400).json(errorResponse);
       }
     }
 

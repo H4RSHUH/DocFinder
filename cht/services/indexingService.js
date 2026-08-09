@@ -36,6 +36,25 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
+// Helper to embed a batch of documents with retries on API errors or empty vectors
+async function embedBatchWithRetry(embeddings, texts, retries = 3, delayMs = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const vectors = await embeddings.embedDocuments(texts);
+      if (vectors && vectors.length > 0 && vectors[0] && vectors[0].length > 0) {
+        return vectors;
+      }
+      console.warn(`⚠️ [embedBatch] Attempt ${attempt} returned empty vectors. Retrying in ${delayMs}ms...`);
+    } catch (err) {
+      console.warn(`⚠️ [embedBatch] Attempt ${attempt} failed: ${err.message}. Retrying in ${delayMs}ms...`);
+    }
+    if (attempt < retries) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error("Embedding service returned empty vectors or failed after multiple retries.");
+}
+
 // ---------------------------------------------------------------------------
 // RAG Ingestion Pipeline
 // ---------------------------------------------------------------------------
@@ -117,18 +136,36 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
     console.log(`🧠 [${fileName}] Generating embeddings...`);
     const embeddings = getEmbeddings();
 
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 25;
     const allVectors = [];
 
+    console.log(`[INDEX] Ingestion Details:`);
+    console.log(`  - File name: ${fileName}`);
+    console.log(`  - Total chunks to embed: ${enrichedChunks.length}`);
+    console.log(`  - Embedding Model: gemini-embedding-001`);
+    console.log(`  - Batch size: ${BATCH_SIZE}`);
+
     for (let i = 0; i < enrichedChunks.length; i += BATCH_SIZE) {
+      // Respect Google's free-tier rate limits (15 RPM)
+      if (i > 0) {
+        console.log(`[INDEX] Waiting 3.5s before next batch to respect rate limits...`);
+        await new Promise((resolve) => setTimeout(resolve, 3500));
+      }
+
       const batch = enrichedChunks.slice(i, i + BATCH_SIZE);
       const texts = batch.map((c) => c.text);
 
+      console.log(`[INDEX] Processing chunk range: #${i + 1} to #${Math.min(i + batch.length, enrichedChunks.length)}`);
+      batch.forEach((c, idx) => {
+        console.log(`  [Chunk #${i + idx + 1}] Character length: ${c.text.length}`);
+      });
+
       let vectors;
       try {
-        vectors = await embeddings.embedDocuments(texts);
+        vectors = await embedBatchWithRetry(embeddings, texts, 4, 8000);
+        console.log(`[INDEX] Batch returned ${vectors?.length || 0} vectors. Vector size: ${vectors?.[0]?.length || 0}`);
       } catch (embErr) {
-        console.error(`❌ [${fileName}] Embedding API Error:`, embErr.message);
+        console.error(`❌ [${fileName}] Embedding API Error:`, embErr);
         throw new Error(`Embedding generation failed: ${embErr.message}`);
       }
 
@@ -218,11 +255,13 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
 
     return docObj;
   } catch (error) {
-    console.error(`❌ [${fileName}] Indexing failed:`, error.message);
+    console.error(`❌ [INDEX ERROR LOG] Indexing failed for "${fileName}":`, error);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
+
+    const safeUserMsg = "Couldn't process this document. Please try again later.";
 
     const failedDoc = {
       ...documents.get(docId),
@@ -231,7 +270,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       name: fileName,
       fileName,
       status: "error",
-      error: error.message,
+      error: safeUserMsg,
     };
 
     documents.set(docId, failedDoc);
@@ -240,7 +279,7 @@ export async function indexPDF(jobId, docId, filePath, fileName, fileSize) {
       status: "failed",
       progress: 0,
       fileName,
-      error: error.message,
+      error: safeUserMsg,
     });
 
     throw error;

@@ -2,6 +2,7 @@ import {
   getAllDocuments,
   deleteDocument as deleteDoc,
 } from "../services/indexingService.js";
+import { classifyError } from "../utils/errorClassifier.js";
 
 /**
  * Lists all currently indexed/processing documents.
@@ -30,10 +31,7 @@ export async function deleteDocument(req, res) {
     await deleteDoc(docId);
     res.json({ message: `Document ${docId} deleted successfully` });
   } catch (error) {
-    console.error("❌ Delete document error:", error.message);
-    res.status(500).json({
-      error: "Failed to delete document",
-      details: error.message,
-    });
+    const errorResponse = classifyError(error);
+    res.status(500).json(errorResponse);
   }
 }

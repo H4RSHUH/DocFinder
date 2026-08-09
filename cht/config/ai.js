@@ -8,10 +8,11 @@ import "dotenv/config";
  */
 export function getLLM() {
   return new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
+    model: "gemini-3.5-flash",
     apiKey: process.env.GEMINI_API_KEY,
     temperature: 0.3,
     maxOutputTokens: 4096,
+    maxRetries: 0,
   });
 }
 
@@ -24,6 +25,7 @@ export function getEmbeddings() {
     modelName: "gemini-embedding-001",
     model: "gemini-embedding-001",
     apiKey: process.env.GEMINI_API_KEY,
+    maxRetries: 3,
   });
 }
 
