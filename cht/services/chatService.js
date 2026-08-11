@@ -192,7 +192,7 @@ ${contextBlocks.join("\n---\n")}`;
   try {
     response = await withTimeout(
       llm.invoke(messagesPayload),
-      20000,
+      30000,
       "Gemini response generation"
     );
   } catch (err) {
